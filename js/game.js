@@ -1,52 +1,101 @@
-class Game{
-    constructor(ctx, player, background, obstacles){
-        this.ctx = ctx
-        this.player = player
-        this.background = background
-        this.obstacles = obstacles
-        this.frameNumber = null
-    }
+class Game {
+  constructor(ctx, player, background, obstacles) {
+    this.ctx = ctx;
+    this.player = player;
+    this.background = background;
+    this.obstacles = obstacles;
+    this.frameNumber = 0;
+    this.score = 0;
 
-    start(){
-       this.init()
-       this.play()
-    }
+    document.addEventListener("keydown", (event) => {
+      this.onKeyDown(event.keyCode);
+    });
+  }
 
-   init(){ //we can initialize/reinitialize the initial page
-       this.frameNumber = 0 //this will store the frame number
-       //this.sound.stop() etc...
-       //background.init()
-   }
+  start() {
+    this.init();
+    this.play();
+  }
 
+  init() {
+    if(this.frameNumber) this.stop()
+    this.frameNumber = 0;
+    this.background.init()
+    this.obstacles.init()
+    this.player.init()
+    // this.sound.init() etc..
+  }
 
-   play(){
-       this.frameNumber += 1; //to advance to the next frame
+  play() {
     this.move();
-    this.checkCollision();
-    this.ctx.clearRect(0,0, ctx.width, ctx.height);
     this.draw();
-    requestAnimationFrame(this.play.bind(this)) //bind (this) means that this function will only run in this object and not in the global one
-   }
+    if (this.checkCollisions()) this.gameOver();
+    if (this.frameNumber !== null) {
+      this.frameNumber = requestAnimationFrame(this.play.bind(this));
+    }
+  }
 
-   move(){
-     this.background.move(this.frameNumber)
-     this.obstacles.move(this.frameNumber)
-     this.player.move(this.frameNumber)
-   }
-    
-   draw(){
-     this.background.draw(this.frameNumber)
-     this.obstacles.draw(this.frameNumber)
-     this.player.draw(this.frameNumber) 
-   }
+  stop() {
+    cancelAnimationFrame(this.frameNumber);
+    this.frameNumber = null;
+  }
 
-   checkCollision(){
-       let collisions = false;
+  onKeyDown(keyCode) {
+    this.player.flyUp();
+  }
+  move() {
+    this.background.move(this.frameNumber);
+    this.obstacles.move(this.frameNumber);
+    this.player.move(this.frameNumber);
+  }
 
-       if(this.obstacles.objects.some( obstacle => this.player.collidesWith(obstacle))) collisions=true; //this checks if the player collides with some of the obstacles
+  draw() {
+    this.ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    this.background.draw(this.frameNumber);
+    this.obstacles.draw(this.frameNumber);
+    this.player.draw(this.frameNumber);
+    this.drawScore();
+  }
 
-       if(this.player.exitsCanvas()) collisions = true;
+  checkCollisions() {
+    let collisions = false;
 
-       return collisions
-   }
+    if (
+      this.obstacles.objects.some((obstacle) =>
+        this.player.collidesWith(obstacle)
+      )
+    ) {
+      collisions = true;
+    }
+
+    if (this.player.exitsCanvas()) collisions = true;
+
+
+    return collisions;
+  }
+
+  drawScore() {
+    this.ctx.save();
+    this.ctx.fillStyle = "black";
+    this.ctx.font = " bold 24px sans-serif";
+    this.ctx.fillText(`Score: ${this.score} pts`, 20, 40);
+    this.ctx.restore();
+  }
+
+  gameOver() {
+    this.stop();
+    this.ctx.save();
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    this.ctx.fillStyle = "white";
+    this.ctx.textAlign = "center";
+    this.ctx.font = "bold 32px sans-serif";
+    this.ctx.fillText(
+      "Game Over",
+      this.ctx.canvas.width / 2,
+      this.ctx.canvas.height / 2
+    );
+    this.ctx.restore();
+  }
 }
+
